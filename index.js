@@ -1,6 +1,9 @@
 const { default: makeWASocket, useMultiFileAuthState, downloadMediaMessage } = require('@whiskeysockets/baileys');
-const fs = require('fs');
 const pino = require('pino');
+const http = require('http');
+
+// Ni untuk Render jangan kill bot
+http.createServer((req, res) => res.end("BOT HD HIDUP")).listen(process.env.PORT || 10000);
 
 async function start() {
   const { state, saveCreds } = await useMultiFileAuthState('auth');
@@ -13,9 +16,8 @@ async function start() {
   sock.ev.on('creds.update', saveCreds);
 
   if (!sock.authState.creds.registered) {
-    const num = "601121007038";
     setTimeout(async () => {
-      const code = await sock.requestPairingCode(num);
+      const code = await sock.requestPairingCode("601121007038");
       console.log("PAIRING CODE:", code);
     }, 3000);
   }
@@ -29,7 +31,12 @@ async function start() {
     const m = messages[0];
     if (!m.message) return;
     const from = m.key.remoteJid;
-    const text = (m.message.conversation || m.message.extendedTextMessage?.text || "").trim().toLowerCase();
+    
+    // Baca teks dari semua jenis mesej
+    let msg = m.message;
+    if (msg.ephemeralMessage) msg = msg.ephemeralMessage.message;
+    if (msg.viewOnceMessage) msg = msg.viewOnceMessage.message;
+    const text = (msg.conversation || msg.extendedTextMessage?.text || msg.imageMessage?.caption || msg.videoMessage?.caption || "").trim().toLowerCase();
     console.log("MESEJ MASUK:", text, "dari", from);
 
     if (text === '.menu' || text === 'menu' || text === 'hi' || text === '.hi' || text === 'bot') {
@@ -37,7 +44,7 @@ async function start() {
       return;
     }
 
-    if (m.message.videoMessage) {
+    if (msg.videoMessage) {
       await sock.sendMessage(from, { text: "Tengah jadikan HD... jap..." });
       try {
         const buffer = await downloadMediaMessage(m, 'buffer', {});
