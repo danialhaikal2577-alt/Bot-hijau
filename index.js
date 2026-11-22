@@ -1,5 +1,9 @@
-
-
+const { default: makeWASocket, useMultiFileAuthState } = require('@whiskeysockets/baileys');
+const fs = require('fs');
+const pino = require('pino');
+const path = require('path');
+const http = require('http');
+http.createServer((req,res)=>res.end('Bot hidup')).listen(process.env.PORT || 3000);
 async function start() {
   const { state, saveCreds } = await useMultiFileAuthState('session');
   const sock = makeWASocket({
